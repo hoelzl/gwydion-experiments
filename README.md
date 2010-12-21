@@ -1,14 +1,14 @@
 Gwydion Experiments
 ===================
 
-This is a repository for some experiments with the Gwydion dylan
+This is a repository for some experiments with the Gwydion Dylan
 compiler that are not appropriate for the official svn repository but
 that I didn't want to do without support from revision control.  The
-initial version of the repository was forked from Gwydion SVN revision
+initial version of the repository was forked from Gwydion svn revision
 12904.  To merge back changes into this repository, it should be
-sufficient to generate a patch agianst the initial revision of the Git
-repository, apply it to a checkout of revision 12904 of the SVN
-repository, and then synchronize with SVN HEAD.
+sufficient to generate a patch agianst the initial revision of the git
+repository, apply it to a checkout of revision 12904 of the svn
+repository, and then synchronize with svn HEAD.
 
     $ svn info
     Path: .
@@ -21,6 +21,3 @@ repository, and then synchronize with SVN HEAD.
     Last Changed Author: peat
     Last Changed Rev: 12903
     Last Changed Date: 2010-12-20 19:16:44 +0100 (Mon, 20 Dec 2010)
-
-
-
