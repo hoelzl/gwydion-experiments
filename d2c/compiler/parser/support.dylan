@@ -1,7 +1,6 @@
 module: parser
 copyright: see below
 
-
 
 //======================================================================
 //
@@ -46,10 +45,9 @@ define open generic process-top-level-form (form :: <constituent-parse>) => ();
 //
 // Like vector, but make a stretchy vector.
 //
-define constant stretchy-vector =
-  method (#rest things) => res :: <stretchy-vector>;
-    as(<stretchy-vector>, things);
-  end;
+define inline function stretchy-vector (#rest things) => res :: <stretchy-vector>;
+  as(<stretchy-vector>, things);
+end function stretchy-vector;
 
 
 // make-body -- internal.
@@ -280,7 +278,7 @@ end method reduce-once;
 //
 // Make a function call out of the operator and the two arguments.
 // 
-define method make-binary-function-call
+define function make-binary-function-call
     (left :: <expression-parse>, left-srcloc :: <source-location>,
      operator :: <operator-token>,
      right :: <expression-parse>, right-srcloc :: <source-location>)
@@ -341,7 +339,7 @@ define method make-binary-function-call
                 arguments: vector(left, right)),
            call-srcloc);
   end if;
-end method make-binary-function-call;
+end function make-binary-function-call;
 
 
 // <case-body-parse-state> -- internal to the parser.
@@ -379,12 +377,12 @@ end class <case-body-parse-state>;
 define sealed domain make (singleton(<case-body-parse-state>));
 define sealed domain initialize (<case-body-parse-state>);
 
-define method push-case-fragment
+define inline function push-case-fragment
     (state :: <case-body-parse-state>, frag :: <fragment>) => ();
   state.fragment := append-fragments!(state.fragment, frag);
-end method push-case-fragment;
+end function push-case-fragment;
 
-define method push-case-constituent
+define function push-case-constituent
     (state :: <case-body-parse-state>,
      constituent :: <constituent-parse>,
      srcloc :: <source-location>)
@@ -396,7 +394,7 @@ define method push-case-constituent
        else
          srcloc;
        end if;
-end method push-case-constituent;
+end function push-case-constituent;
 
 define method finish-case-body (state :: <case-body-parse-state>) => ();
   let body = as(<simple-object-vector>, state.partial-body);
@@ -480,7 +478,7 @@ end method remove-optional-semi-and-end;
 
 
 
-define method make-define-rule (pattern :: <pattern>, rhs :: <template>)
+define function make-define-rule (pattern :: <pattern>, rhs :: <template>)
     => rule :: <main-rule>;
   let (new-pattern, found-end?) = remove-optional-semi-and-end(pattern);
   if (found-end?)
@@ -488,10 +486,10 @@ define method make-define-rule (pattern :: <pattern>, rhs :: <template>)
   else
     make(<list-style-define-rule>, pattern: new-pattern, template: rhs);
   end if;
-end method make-define-rule;
+end function make-define-rule;
 
 
-define method make-statement-or-function-rule
+define function make-statement-or-function-rule
     (name :: <identifier-token>, pattern :: <pattern>, rhs :: <template>)
     => rule :: <main-rule>;
   let (new-pattern, found-end?) = remove-optional-semi-and-end(pattern);
@@ -504,7 +502,7 @@ define method make-statement-or-function-rule
   else
     compiler-fatal-error-location(name, "Invalid rule syntax.");
   end if;
-end method make-statement-or-function-rule;
+end function make-statement-or-function-rule;
 
 
 
@@ -661,7 +659,7 @@ define constant $initial-stack-size = 200;
 // Grow a stack.  Make a new vector twice as long, copy the old elements
 // across, and return it.
 // 
-define method grow (vec :: <simple-object-vector>)
+define function grow (vec :: <simple-object-vector>)
     => new :: <simple-object-vector>;
   let old-size = vec.size;
   let new-size = old-size * 2;
@@ -670,14 +668,36 @@ define method grow (vec :: <simple-object-vector>)
     new[index] := vec[index];
   end for;
   new;
-end method grow;
+end function grow;
+
+// check-for-potential-end-point -- internal.
+//
+// Check whether lookahead is the end point of a series of tokens that
+// can be parsed.  This information is used by the macro expander
+// during pattern matching.
+//
+define inline function check-for-potential-end-point
+    (tokenizer :: <tokenizer>, lookahead :: <token>, 
+     action-datum :: <integer>, debug? :: <boolean>)
+ => ();
+  unless (lookahead.token-kind == $eof-token)
+    let actions :: <simple-object-vector> = $action-table[action-datum];
+    let action :: <integer> = actions[$eof-token];
+    unless (action == $error-action)
+      note-potential-end-point(tokenizer);
+      if (debug?)
+        dformat("potential end point\n");
+      end if;
+    end unless;
+  end unless;
+end function check-for-potential-end-point;
 
 // parse -- internal.
 //
 // The actual parser loop.  Drive the state machine and maintain the stacks
 // until we hit an accept action or until be hit a bogus token.
 // 
-define method parse
+define function parse
     (tokenizer :: <tokenizer>, start-state :: <integer>, debug? :: <boolean>)
     => result :: <object>;
   block (return)
@@ -687,18 +707,28 @@ define method parse
 
     state-stack[0] := start-state;
     let top :: <integer> = 1;
-    let (lookahead, lookahead-srcloc) = get-token(tokenizer);
 
-    unless (lookahead.token-kind == $eof-token)
-      let actions :: <simple-object-vector> = $action-table[start-state];
-      let action :: <integer> = actions[$eof-token];
-      unless (action == $error-action)
-        note-potential-end-point(tokenizer);
-        if (debug?)
-          dformat("potential end point\n");
-        end if;
-      end unless;
-    end unless;
+    local method maybe-grow-stack (stack-top :: <integer>) => ();
+            if (stack-top == state-stack.size)
+              state-stack := grow(state-stack);
+              symbol-stack := grow(symbol-stack);
+              srcloc-stack := grow(srcloc-stack);
+            end if;            
+          end method,
+          method push-item
+              (state :: <integer>, 
+               symbol,
+               srcloc :: <source-location>, old-top :: <integer>)
+           => ();
+            state-stack[old-top] := state;
+            symbol-stack[old-top] := symbol;
+            srcloc-stack[old-top] := srcloc;
+            top := old-top + 1;
+          end method;
+
+    let (lookahead :: <token>, lookahead-srcloc :: <source-location>)
+      = get-token(tokenizer);
+    check-for-potential-end-point(tokenizer, lookahead, start-state, debug?);
 
     while (#t)
       let state :: <integer> = state-stack[top - 1];
@@ -714,7 +744,8 @@ define method parse
         = truncate/(action, ash(1, $action-bits));
       select (action-kind)
         $error-action =>
-          compiler-fatal-error-location(lookahead-srcloc, "Parse error at or before %s", lookahead);
+          compiler-fatal-error-location(lookahead-srcloc, 
+                                        "Parse error at or before %s", lookahead);
 
         $accept-action =>
           if (debug?)
@@ -727,33 +758,18 @@ define method parse
           return(symbol-stack[1]);
 
         $shift-action =>
-          if (top == state-stack.size)
-            state-stack := grow(state-stack);
-            symbol-stack := grow(symbol-stack);
-            srcloc-stack := grow(srcloc-stack);
-          end if;
+          maybe-grow-stack(top);
+
           if (debug?)
             dformat("  shifting to state %d.\n", action-datum);
           end if;
-          state-stack[top] := action-datum;
-          symbol-stack[top] := lookahead;
-          srcloc-stack[top] := lookahead-srcloc;
-          top := top + 1;
-          let (new-lookahead, new-srcloc) = get-token(tokenizer);
+          push-item(action-datum, lookahead, lookahead-srcloc, top);
+          let (new-lookahead :: <token>, new-srcloc :: <source-location>)
+            = get-token(tokenizer);
           lookahead := new-lookahead;
           lookahead-srcloc := new-srcloc;
-
-          unless (lookahead.token-kind == $eof-token)
-            let actions :: <simple-object-vector>
-              = $action-table[action-datum];
-            let action :: <integer> = actions[$eof-token];
-            unless (action == $error-action)
-              note-potential-end-point(tokenizer);
-              if (debug?)
-                dformat("potential end point\n");
-              end if;
-            end unless;
-          end unless;
+          
+          check-for-potential-end-point(tokenizer, lookahead, action-datum, debug?);
 
         $reduce-action =>
           let semantic-action :: <function>
@@ -787,20 +803,12 @@ define method parse
           let (new-state :: <integer>, new-symbol)
             = apply(semantic-action, state-stack[old-top - 1], new-srcloc,
                     extra-args);
-          if (old-top == state-stack.size)
-            state-stack := grow(state-stack);
-            symbol-stack := grow(symbol-stack);
-            srcloc-stack := grow(srcloc-stack);
-          end if;
-          state-stack[old-top] := new-state;
-          symbol-stack[old-top] := new-symbol;
-          srcloc-stack[old-top] := new-srcloc;
-          top := old-top + 1;
-
+          maybe-grow-stack(old-top);
+          push-item(new-state, new-symbol, new-srcloc, old-top);
       end select;
     end while;
   end block;
-end method parse;
+end function parse;
 
 
 
@@ -808,81 +816,80 @@ end method parse;
 
 // parse-source-record -- exported.
 // 
-define method parse-source-record
+define inline function parse-source-record
     (tokenizer :: <tokenizer>, #key debug: debug? :: <boolean>)
     => ();
   parse(tokenizer, $source-record-start-state, debug?);
-end;
+end function parse-source-record;
 
 // parse-expression -- exported.
 // 
-define method parse-expression
+define inline function parse-expression
     (tokenizer :: <tokenizer>, #key debug: debug? :: <boolean>)
     => res :: <expression-parse>;
   parse(tokenizer, $expression-start-state, debug?);
-end;
+end function parse-expression;
 
 // parse-variable -- exported.
 // 
-define method parse-variable
+define inline function parse-variable
     (tokenizer :: <tokenizer>, #key debug: debug? :: <boolean>)
     => res :: <parameter>;
   parse(tokenizer, $variable-start-state, debug?);
-end;
+end function parse-variable;
 
 // parse-bindings -- exported.
 // 
-define method parse-bindings
+define inline function parse-bindings
     (tokenizer :: <tokenizer>, #key debug: debug? :: <boolean>)
     => res :: <bindings-parse>;
   parse(tokenizer, $bindings-start-state, debug?);
-end;
+end function parse-bindings;
 
 // parse-body -- exported.
 // 
-define method parse-body
+define inline function parse-body
     (tokenizer :: <tokenizer>, #key debug: debug? :: <boolean>)
     => res :: <expression-parse>;
   parse(tokenizer, $body-opt-start-state, debug?);
-end;
+end function parse-body;
 
 // parse-case-body -- exported.
 // 
-define method parse-case-body
+define inline function parse-case-body
     (tokenizer :: <tokenizer>, #key debug: debug? :: <boolean>)
     => res :: <fragment>;
   parse(tokenizer, $case-body-opt-start-state, debug?);
-end;
+end function parse-case-body;
 
 // parse-property-list -- exported.
 // 
-define method parse-property-list
+define inline function parse-property-list
     (tokenizer :: <tokenizer>, #key debug: debug? :: <boolean>)
     => res :: <simple-object-vector>;
   parse(tokenizer, $property-list-opt-start-state, debug?);
-end;
+end function parse-property-list;
 
 // parse-parameter-list -- exported.
 // 
-define method parse-parameter-list
+define inline function parse-parameter-list
     (tokenizer :: <tokenizer>, #key debug: debug? :: <boolean>)
     => res :: <parameter-list>;
   parse(tokenizer, $parameter-list-opt-start-state, debug?);
-end;
+end function parse-parameter-list;
 
 // parse-variable-list -- exported.
 // 
-define method parse-variable-list
+define inline function parse-variable-list
     (tokenizer :: <tokenizer>, #key debug: debug? :: <boolean>)
     => res :: <variable-list>;
   parse(tokenizer, $variable-list-opt-start-state, debug?);
-end;
+end function parse-variable-list;
 
 // parse-macro-call -- exported.
 // 
-define method parse-macro-call
+define inline function parse-macro-call
     (tokenizer :: <tokenizer>, #key debug: debug? :: <boolean>)
     => res :: <macro-call-parse>;
   parse(tokenizer, $macro-call-start-state, debug?);
-end;
-
+end function parse-macro-call;
