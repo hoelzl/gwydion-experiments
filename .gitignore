@@ -1,2 +1,12 @@
 *~
-build/
+install-sh
+aclocal.m4
+autom4te.cache/
+common/system/architecture.dylan
+config.guess
+config.h.in
+config.sub
+configure
+d2c/compiler/main/file-locations.dylan
+d2c/compiler/main/version.dylan
+ltmain.sh
