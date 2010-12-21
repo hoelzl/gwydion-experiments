@@ -1,0 +1,21 @@
+
+# the order is significant, since the d2c libraries must be compiled in dependency order.
+
+unless ($enable_bootstrap) {
+  &compile_subdirs('table-extensions',
+		   'common-dylan',
+		   'collections',
+		   'matrix',
+		   'collection-extensions',
+		   'string-extensions',
+		   'regular-expressions',
+		   'io',
+		   'system',
+		   'command-line-parser',
+		   'stream-extensions');
+
+  if($features{'compiled_for_unix'}) {
+    #&compile_subdirs('network');
+    &compile_subdirs('command-processor');
+  }
+}

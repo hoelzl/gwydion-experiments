@@ -1,0 +1,15 @@
+Source: gwydiondylan
+Section: devel
+Priority: optional
+Maintainer: Ingo Albrecht <prom@opendylan.org>
+Build-Depends: gcc
+Standards-Version: 3.6.2.1
+
+Package: gwydiondylan
+Architecture: any
+Depends: gcc, ${shlibs:Depends}
+Description: Gwydion Dylan
+ Gwydion Dylan is an implementation of the high-level system programming language dylan.
+ . 
+ This package contains all of GD. Expect this to change.
+

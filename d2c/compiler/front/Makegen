@@ -1,0 +1,15 @@
+$CPPFLAGS = "$CPPFLAGS -I../../runtime ";
+$D2CFLAGS         # added by update-libdirs
+    = $d2c_runtime
+    . ' -L../../../common/collection-extensions'
+    . ' -L../../../common/common-dylan'
+    . ' -L../../../common/io'
+    . ' -L../../../common/string-extensions'
+    . ' -L../../../common/system'
+    . ' -L../../../common/table-extensions'
+    . ' -L../base'
+    . ' -L../../runtime/random'
+    . ' -L../../runtime/threads';
+
+do emit_library_rule('Front', '$(BUILDROOT)/force.timestamp', '', 
+		     'compile', 'install');

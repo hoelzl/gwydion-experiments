@@ -1,0 +1,138 @@
+#!/usr/bin/make -f
+# Gwydion Dylan Rules File
+
+###############
+# CONFIGURATION
+
+GD_BUILD_DBG:=yes
+GD_BUILD_SMP:=$(shell grep '^processor' /proc/cpuinfo | wc -l)
+
+GD_PREFIX:=/usr
+GD_MANDIR:=$(GD_PREFIX)/share/man
+
+export DH_COMPAT=5
+export DH_VERBOSE=0
+
+########
+# SANITY
+
+GD_BOOTSTRAP_D2C=$(shell which d2c)
+ifeq "$(GD_BOOTSTRAP_D2C)" ""
+  $(error "You need a working d2c to compile gwydiondylan 2.5")
+endif
+
+#########################
+# BUILD SYSTEM GENERATION
+
+generate: generate-stamp
+.PHONY: generate
+
+generate-stamp:
+	dh_testdir
+	
+	./real-autogen.sh
+	
+	touch generate-stamp
+
+###############
+# CONFIGURATION
+
+configure: configure-stamp
+.PHONY: configure
+
+configure-stamp: generate-stamp
+	dh_testdir
+	
+	./configure --prefix=$(GD_PREFIX)               \
+		    --mandir=$(GD_MANDIR)               \
+		    --enable-debug=$(GD_BUILD_DBG)      \
+                    --with-thread-count=$(GD_BUILD_SMP) \
+		    --enable-bootstrap
+	
+	touch configure-stamp
+
+#######
+# BUILD
+
+build: build-stamp
+.PHONY: build
+
+build-stamp: configure-stamp
+	dh_testdir
+	
+	$(MAKE)
+	
+	touch build-stamp
+
+##############
+# INSTALLATION
+
+install: build-stamp
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+
+	$(MAKE) DESTDIR=`pwd`/debian/gwydiondylan install
+
+.PHONY: install
+
+#########
+# CLEANUP
+
+clean:
+	dh_testdir
+	dh_testroot
+
+	rm -f generate-stamp configure-stamp build-stamp
+	
+	rm -rf debian/gwydiondylan
+	
+	$(MAKE) clean
+	
+	dh_clean
+
+.PHONY: clean
+
+###########
+# PACKAGING
+
+# Build architecture-independent files here.
+binary-indep:
+
+# Build architecture-dependent files here.
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs
+	dh_installdocs
+#	dh_installexamples
+#	dh_install
+#	dh_installmenu
+#	dh_installdebconf	
+#	dh_installlogrotate
+#	dh_installemacsen
+#	dh_installcatalogs
+#	dh_installpam
+#	dh_installmime
+#	dh_installinit
+#	dh_installcron
+#	dh_installinfo
+#	dh_undocumented
+#	dh_installman
+	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms
+#	dh_perl
+#	dh_python
+	dh_makeshlibs
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: binary-indep binary-arch binary
+
