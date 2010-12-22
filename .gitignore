@@ -10,3 +10,4 @@ configure
 d2c/compiler/main/file-locations.dylan
 d2c/compiler/main/version.dylan
 ltmain.sh
+TAGS
