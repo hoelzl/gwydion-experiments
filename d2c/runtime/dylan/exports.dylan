@@ -70,7 +70,7 @@ define module Dylan
 
 	     // Constructing and Initializing Instances
 	     make, initialize, slot-initialized?, list, pair, range, singleton,
-	     limited, type-union, vector,
+	     limited, type-union, vector, stretchy-vector,
 
 	     // Equality and Comparison
 	     \~, \==, \~==, \=, \~=, \<, \>, \<=, \>=, min, max,

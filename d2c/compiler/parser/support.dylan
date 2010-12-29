@@ -41,15 +41,6 @@ define open generic process-top-level-form (form :: <constituent-parse>) => ();
 
 // Utility functions used by semantic actions.
 
-// stretchy-vector -- internal.
-//
-// Like vector, but make a stretchy vector.
-//
-define inline function stretchy-vector (#rest things) => res :: <stretchy-vector>;
-  as(<stretchy-vector>, things);
-end function stretchy-vector;
-
-
 // make-body -- internal.
 //
 // Return a expression-parse for the body containting the supplied parts.

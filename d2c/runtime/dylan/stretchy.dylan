@@ -65,6 +65,14 @@ define sealed inline method size (ssv :: <builtin-stretchy-vector>)
   ssv.ssv-current-size;
 end method size;
 
+// stretchy-vector -- exported.
+//
+// Like vector, but make a stretchy vector.
+//
+define inline function stretchy-vector (#rest things) => res :: <stretchy-vector>;
+  as(<stretchy-vector>, things);
+end function stretchy-vector;
+
 
 // <stretchy-object-vector>
 
