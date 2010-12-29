@@ -7,14 +7,10 @@
 #include "config.h"
 #include "runtime.h"
 
-#if defined(HAVE_GC_H)
-#include <gc.h>
-#elif defined(HAVE_GC_GC_H)
-#include <gc/gc.h>
-#endif
-
 int application_argc;
 char **application_argv;
+
+extern void dylan_gc_init(void);
 
 void GD_NORETURN not_reached(void)
 {
@@ -30,7 +26,7 @@ void real_main(int argc, char *argv[])
 {
     descriptor_t *sp;
 
-    GC_INIT();
+    dylan_gc_init();
 
     sp = allocate_stack();
 
@@ -105,3 +101,14 @@ long *cpu_time(void)
   return retval;
 }
 #endif
+
+int dylan_fault_in(const char * data, int length)
+{
+  int i, t = 0;
+  for(i = 0; i < length; i += 4096) {
+    t += data[i];
+  }
+  t += data[length - 1];
+  return t;
+}
+

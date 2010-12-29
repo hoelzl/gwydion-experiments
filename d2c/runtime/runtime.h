@@ -44,9 +44,12 @@ typedef struct descriptor {
 
 typedef descriptor_t *(*entry_t)();
 
+/* Memory allocation, GC stuff */
 extern heapptr_t allocate(unsigned int bytes);
 extern descriptor_t *allocate_stack(void);
 extern void destroy(void* ptr);
+extern long dylan_gc_get_total_bytes(void);
+
 extern heapptr_t make_trampoline(void *func, descriptor_t closure,
 				 int nkeys, char *signature);
 extern descriptor_t *catch(descriptor_t *(*fn)(descriptor_t *sp, void *state,
@@ -93,6 +96,11 @@ extern heapptr_t initial_symbols;
 
 extern GD_NORETURN void not_reached(void);
 extern void no_core_dumps(void);
+
+/* This is used by DTrace integration to ensure that a block of memory
+ * has been faulted into userspace so that it can be accessed by
+ * the D script. */
+extern int dylan_fault_in(const char *, int);
 
 float (frexpf)(float x, int *exp);
 long double (frexpl)(long double x, int *exp);
