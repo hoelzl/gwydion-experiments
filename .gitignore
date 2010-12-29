@@ -1,4 +1,6 @@
 *~
+*#
+*.diff
 install-sh
 aclocal.m4
 autom4te.cache/
@@ -10,3 +12,4 @@ configure
 d2c/compiler/main/file-locations.dylan
 d2c/compiler/main/version.dylan
 ltmain.sh
+TAGS

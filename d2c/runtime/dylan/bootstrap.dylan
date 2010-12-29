@@ -120,7 +120,7 @@ define module dylan-viscera
 
     // Constructing and Initializing Instances
     make, initialize, slot-initialized?, list, pair, range, singleton,
-    limited, type-union, immutable-vector, vector,
+    limited, type-union, immutable-vector, vector, stretchy-vector,
 
     // Equality and Comparison
     \~, \==, \~==, \=, \~=, \<, \>, \<=, \>=, min, max,
