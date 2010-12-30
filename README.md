@@ -21,6 +21,6 @@ Original svn info:
     Last Changed Rev: 12903
     Last Changed Date: 2010-12-20 19:16:44 +0100 (Mon, 20 Dec 2010)
 
-The branch svn contains updated checkouts of svn; the branch
-updated-svn is a merge of master and svn.
+The branch `svn` contains updated checkouts of svn; the branch
+`updated-svn` is a merge of branches `master` and `svn`.
 
